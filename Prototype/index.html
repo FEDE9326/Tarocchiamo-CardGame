@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+    <title>Socket.IO chat</title>
+    <script src="/socket.io/socket.io.js" ></script>
+</head>
+<script>
+
+var updatePlayersNumber = function(playerNumber) {
+    document.getElementById("number_of_people").innerText = "";
+    document.getElementById("number_of_people").innerText = playerNumber;
+    if(playerNumber < 4){
+        document.getElementById("game_started").style.visibility = "hidden";
+        document.getElementById("waiting_space").style.visibility = "";
+        document.getElementById("player_list").innerHTML = "";
+        document.getElementById("card_list").innerHTML = "";
+    }
+};
+
+//Let's create the socket connection only after the auth, otherwise something bad can happens...
+var postLogin = function(){
+    var url = '/';
+    var username = document.getElementById("username").value;
+    var password = document.getElementById("pass").value;
+
+    var data = {
+        username: username, 
+        password: password
+    };
+
+    var sockettino = io();
+
+    sockettino.emit('login', data);
+
+/*     console.log("dtwayefwiuq");
+    fetch(url, {
+        
+        method: 'POST', // or 'PUT'
+        body: JSON.stringify(data), // data can be `string` or {object}!
+        headers:{
+        'Content-Type': 'application/json'
+        }
+    })
+        .then(res => res.json())
+        .then(response => console.log('Success:', JSON.stringify(response)))
+        .catch(error => console.error('Error:', error));
+
+    document.getElementById("login_form").style.visibility = "hidden";
+    document.getElementById("waiting_space").style.visibility = "";
+ */
+
+    sockettino.on('game_start', function(data){
+        console.log('game started');
+        console.log(data);
+        document.getElementById("waiting_space").style.visibility = "hidden";
+        document.getElementById("game_started").style.visibility = "";
+        document.getElementById("player_list").innerHTML = data.players[0] + "<br>" + data.players[1]  + "<br>" + data.players[2] + "<br>" + data.players[3];
+        
+        var cardString = "";
+        for(var i of data.cards){
+            cardString += (Object.keys(i)[0] + " <br> "); 
+        }
+        document.getElementById("card_list").innerHTML = cardString;
+    });
+
+    sockettino.on('new player joined', function(data)
+    {
+        updatePlayersNumber(data.playerNumber);
+    });
+
+    sockettino.on('player left', function(data)
+    {
+        updatePlayersNumber(data.playerNumber);
+    });
+
+    
+
+
+};
+
+</script>
+<body>
+       <div id="login_form">
+            Username:
+            <input type="text" id="username" name="username"><br />
+            Password:
+            <input type="password" id="pass" name="pass"><br />
+         
+            <button onclick="postLogin()">send</button>
+       </div>
+        <div id="waiting_space" style="visibility: hidden;">
+             Waiting for other people.... <label id="number_of_people"></label>/4
+        </div>
+
+       <div id="game_started" style="visibility: hidden;">
+           GAME STARTED! Players:
+           <br>
+           <label id="player_list"></label>
+           <br>
+           Here are your cards!
+           <br>
+           <label id="card_list"></label>
+       </div>
+</body>
+</html>
